@@ -13,6 +13,9 @@ class Graph:
 
     def add_edge(self, node_src: str, node_dst: str, cost: int) -> None:
 
+        if node_src == node_dst:
+            return
+
         if not node_src in self._nodes.keys():
             self.add_node(node_src)
 
@@ -55,6 +58,23 @@ class Graph:
 
     def update_cost(self, src_node: str, dst_node: str, cost: int) -> None:
         self.add_edge(src_node, dst_node, cost)
+
+    def get_adjacent_nodes(self, node: str) -> dict:
+        if not node in self._nodes:
+            return {}
+        return self._nodes[node]
+    
+    def get_cost(self, src_node: str, dst_node: str) -> int:
+        
+        if not src_node in self._nodes:
+            return -1
+        
+        # If dst_node in the src_node dict, then dst_node must be stored in the _nodes dict.
+        # Which means, we are eliminating the cond: if not dst_node in self._nodes
+        if not dst_node in self._nodes[src_node]:
+            return -1
+        
+        return self._nodes[src_node][dst_node]
 
 
 def load_file(srcfile: str) -> Graph:
@@ -117,10 +137,14 @@ if __name__ == "__main__":
     area.add_edge("City3", "City2", 2)
     area.add_edge("City3", "City1", 14)
 
-    print(f"\nBefore removing City2")
-    area._adjacency_list()
+    # print(f"\nBefore removing City2")
+    # area._adjacency_list()
 
-    area.remove_node("City2")
+    # area.update_cost("City5", "City6", 10)
 
-    print(f"\nAfter removing City2")
-    area._adjacency_list()
+    print(f"{area.get_cost('City3', 'City1')}")
+
+    # area.remove_node("City2")
+
+    # print(f"\nAfter removing City2")
+    # area._adjacency_list()

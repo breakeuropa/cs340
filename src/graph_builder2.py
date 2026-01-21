@@ -24,8 +24,15 @@ class Graph:
     # def remove_node(self):
     #     pass
 
-    # def remove_edge(self):
-    #     pass
+    def remove_edge(self, src_node: str, node: str):
+
+        if not src_node in self._nodes.keys():
+            return
+        
+        if not node in self._nodes[src_node].keys():
+            return
+        
+        self._nodes[src_node].pop(node)
 
     def _adjacency_list(self):
 
@@ -43,16 +50,35 @@ if __name__ == "__main__":
 
     area = Graph()
 
+    # Update 1; added add_node, add_edge, adjacency_list
+
+    # area.add_node("City1")
+    # area.add_node("City2")
+    # area.add_node("City3")
+    # area.add_node("City4")
+
+    # area.add_edge("City1", "City2", 4)
+    # area.add_edge("City1", "City4", 10)
+    # area.add_edge("City3", "City1", 5)
+    # area.add_edge("City2", "City3", 2)
+    # area.add_edge("City1", "City4", 15)
+
+    # Update 2; added remove_edge:
+
     area.add_node("City1")
     area.add_node("City2")
     area.add_node("City3")
-    area.add_node("City4")
 
     area.add_edge("City1", "City2", 4)
-    area.add_edge("City1", "City4", 10)
-    area.add_edge("City3", "City1", 5)
-    area.add_edge("City2", "City3", 2)
+    area.add_edge("City2", "City3", 8)
 
     print(f"{area._nodes}")
 
+    print(f"\nBefore removing City2 from City1:")
+    area._adjacency_list()
+
+    area.remove_edge("City1", "City2")
+
+
+    print(f"\nAfter removing City2 from City1:")
     area._adjacency_list()

@@ -45,6 +45,14 @@ class Graph:
             
             print(f"{txt}")
 
+def load_file(srcfile: str) -> Graph:
+    new_graph = Graph()
+
+    return new_graph
+
+
+
+
 if __name__ == "__main__":
     print("Hello world")
 

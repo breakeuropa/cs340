@@ -153,7 +153,7 @@ def load_query_file(srcfile: str, data: Graph) -> None:
 
             # Update 1: It seems like some roads from commands2.txt aren't defined in input1.txt
             if not data.has_edge(src_node, dst_node):
-                # print(f"{dst_node} isn't located in {src_node}, initializing...")
+                print(f"{dst_node} isn't located in {src_node}, adding to graph obj...")
                 data.add_edge(src_node, dst_node, cost)
 
             else:

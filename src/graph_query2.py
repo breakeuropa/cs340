@@ -1,5 +1,40 @@
 import sys
 
+# Update 2: Hashmaps w/ chaining 
+
+class HashMap:
+
+    def __init__(self, size):
+        self._size: int = size
+        self._list: list = [[] for _ in range(size)]
+
+    def hash_function(self, key: str) -> int:
+        value: int = 0
+        for char in key:
+            value = (value * 31 + ord(char)) % self._size
+        return value
+
+    def set_value(self, key: str, value: int) -> None:
+        index: int = self.hash_function(key)
+        bucket: list = self._list[index]
+        
+        if not key in bucket:
+            bucket.append((key, value))
+            return
+        
+        for i, (k, v) in enumerate(bucket):
+            bucket[i] = (key, value) if k == key else bucket[i]
+
+    def get_value(self, key: str) -> int:
+        index: int = self.hash_function(key)
+        bucket: list = self._list[index]
+
+        for i, (k, v) in enumerate(bucket):
+            if key == k:
+                return v
+        return -1
+
+
 class Graph:
 
     #create "_nodes" attribute which is a dictionary
@@ -167,20 +202,33 @@ def load_query_file(srcfile: str, data: Graph) -> None:
         else: # query -> k_paths
             pass
 
-
-
-
-
-
 def main(argv: list) -> None:
 
     if len(argv) != 3:
         print(f"Invalid. Command usage: python {argv[0]} <city file> <query file>")
         return
    
-    city_graph: Graph = load_cities_file(argv[1])
-    load_query_file(argv[2], city_graph)
-    city_graph._adjacency_list()
+    # city_graph: Graph = load_cities_file(argv[1])
+    # load_query_file(argv[2], city_graph)
+    # city_graph._adjacency_list()
+
+    hash = HashMap(500)
+    # print(f"{hash.hash_function('hello world')}")
+    # print(f"{hash.hash_function('Hello world')}")
+    # print(f"{hash.hash_function('cat')}")
+    # print(f"{hash.hash_function('cta')}")
+    # print(f"{hash.hash_function('tac')}")
+    # print(f"{hash.hash_function('tca')}")
+    # print(f"{hash.hash_function('act')}")
+    # print(f"{hash.hash_function('atc')}")
+
+    hash.append("test", 48)
+    hash.append("sett", 72)
+    hash.append("etst", 499)
+
+    print(f"{hash.get_value('test')}")
+    print(f"{hash.get_value('sett')}")
+    print(f"{hash.get_value('etst')}")
 
 # Update 5; argument pass
 if __name__ == "__main__":

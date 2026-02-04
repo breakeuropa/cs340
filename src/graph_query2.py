@@ -95,19 +95,19 @@ class Graph:
         #Calculate cost
         self._nodes[src_node][dst_node] = cost
 
-#Read the input file
-def load_file(srcfile: str) -> Graph:
+    def has_edge(self, src_node: str, dst_node: str) -> bool:
+        return dst_node in self._nodes[src_node]
+    
+    def contains(self, node: str) -> bool:
+        return node in self._nodes
+
+def load_cities_file(srcfile: str) -> Graph:
     new_graph = Graph()
 
     try:
         file = open(srcfile, "r")
     except:
         raise FileNotFoundError(f"File {srcfile} isn't found.")
-   
-    # Update 7; Added parser. We assume that the input file contains the following keywords:
-    # "ROADS" and "CITIES"
-    # City nodes created are under 'CITIES'
-    # Roads (edges) are created under 'ROADS'
    
     keys = {"ROADS", "CITIES"}
     selected_key: str = "None"
@@ -134,13 +134,52 @@ def load_file(srcfile: str) -> Graph:
            
     return new_graph
 
+def load_query_file(srcfile: str, data: Graph) -> None:
+
+    try:
+        file = open(srcfile, "r")
+    except:
+        raise FileNotFoundError(f"File {srcfile} isn't found.")
+    
+    for line in file:
+        values: list = line.rstrip().split(' ')
+
+        if values[0] == "TRAFFIC_REPORT":
+            
+            src_node: str = values[1]
+            dst_node: str = values[2]
+            try: cost: int = int(values[3])
+            except: cost = 999
+
+            # Update 1: It seems like some roads from commands2.txt aren't defined in input1.txt
+            if not data.has_edge(src_node, dst_node):
+                # print(f"{dst_node} isn't located in {src_node}, initializing...")
+                data.add_edge(src_node, dst_node, cost)
+
+            else:
+                edge_cost: int = data.get_cost(src_node, dst_node)
+                print(f"{dst_node} found in {src_node} {edge_cost}")
+                data.set_cost(src_node, dst_node, edge_cost + cost)
+
+        elif values[0] == "QUERY" and values[1] == "SHORTEST_PATH":
+            pass
+
+        else: # query -> k_paths
+            pass
+
+
+
+
+
+
 def main(argv: list) -> None:
 
-    if len(argv) != 2:
-        print(f"Invalid. Command usage: python {argv[0]} <src file>")
+    if len(argv) != 3:
+        print(f"Invalid. Command usage: python {argv[0]} <city file> <query file>")
         return
    
-    city_graph: Graph = load_file(argv[1])
+    city_graph: Graph = load_cities_file(argv[1])
+    load_query_file(argv[2], city_graph)
     city_graph._adjacency_list()
 
 # Update 5; argument pass

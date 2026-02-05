@@ -1,9 +1,15 @@
 import sys
 
 # Update 2: Hashmaps w/ chaining 
+# Update 3: +remove_value()
+
+# (2/4/26 - 6:53am): If prof asked us to turn this into an undirected graph, we might need to change
+# the graph class a bit. Possible solution: For example, instead of having each city containing its
+# own dictionary, we will remove this and the main list will probably be a tuple or something
 
 class HashMap:
 
+    # We want to initalize the size so % operator won't be a problem.
     def __init__(self, size):
         self._size: int = size
         self._list: list = [[] for _ in range(size)]
@@ -24,6 +30,16 @@ class HashMap:
         
         for i, (k, v) in enumerate(bucket):
             bucket[i] = (key, value) if k == key else bucket[i]
+
+    def remove_value(self, key: str) -> None:
+        index: int = self.hash_function(key)
+        bucket: list = self._list[index]
+
+        if not key in bucket:
+            return
+
+        for i, (k,v) in enumerate(bucket):
+            if key == k: bucket.pop(i) 
 
     def get_value(self, key: str) -> int:
         index: int = self.hash_function(key)
@@ -187,9 +203,22 @@ def load_query_file(srcfile: str, data: Graph) -> None:
             except: cost = 999
 
             # Update 1: It seems like some roads from commands2.txt aren't defined in input1.txt
-            if not data.has_edge(src_node, dst_node):
-                print(f"{dst_node} isn't located in {src_node}, adding to graph obj...")
-                data.add_edge(src_node, dst_node, cost)
+            # Let A and B be nodes, c1 and c2 be cost numbers.
+            if not data.has_edge(src_node, dst_node): # If B is not in A
+
+                if data.has_edge(dst_node, src_node): # If A in B
+                    
+                    print(f"debug: {dst_node} isn't located in {src_node} BUTTTT.... {dst_node} contains {src_node}")
+                    edge_cost: int = data.get_cost(dst_node, src_node) + cost
+                    data.add_edge(src_node, dst_node, edge_cost)
+
+                else: 
+                    # A is not in B AND B is not in A, so we need to create an edge 
+                    # with the cost. If the cost is < 0 then set it to 0
+                    cost = cost if (cost >= 0) else 0
+                    data.add_edge(src_node, dst_node, cost)
+                    print(f"{dst_node} isn't located in {src_node}, (NEW CONNECTION)")
+
 
             else:
                 edge_cost: int = data.get_cost(src_node, dst_node)
@@ -208,8 +237,8 @@ def main(argv: list) -> None:
         print(f"Invalid. Command usage: python {argv[0]} <city file> <query file>")
         return
    
-    # city_graph: Graph = load_cities_file(argv[1])
-    # load_query_file(argv[2], city_graph)
+    city_graph: Graph = load_cities_file(argv[1])
+    load_query_file(argv[2], city_graph)
     # city_graph._adjacency_list()
 
     hash = HashMap(500)
@@ -222,13 +251,13 @@ def main(argv: list) -> None:
     # print(f"{hash.hash_function('act')}")
     # print(f"{hash.hash_function('atc')}")
 
-    hash.append("test", 48)
-    hash.append("sett", 72)
-    hash.append("etst", 499)
+    # hash.append("test", 48)
+    # hash.append("sett", 72)
+    # hash.append("etst", 499)
 
-    print(f"{hash.get_value('test')}")
-    print(f"{hash.get_value('sett')}")
-    print(f"{hash.get_value('etst')}")
+    # print(f"{hash.get_value('test')}")
+    # print(f"{hash.get_value('sett')}")
+    # print(f"{hash.get_value('etst')}")
 
 # Update 5; argument pass
 if __name__ == "__main__":

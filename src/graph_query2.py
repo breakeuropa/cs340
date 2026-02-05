@@ -39,7 +39,7 @@ class MinHeap:
         #if we're not at the root node AND the current cost is < the parent cost
         if index > 0 and self.data[index][0] < self.data[parent][0]:
             #then swap the child (currrent) and parent
-            self.swap(index, parent)
+            self._swap(index, parent)
             #fix the heap
             self._bubble_up(parent)
 
@@ -60,6 +60,8 @@ class MinHeap:
             self._swap(index, smallest)
             self._bubble_down(smallest)
 
+    def _swap(self, i, j):
+        self.data[i], self.data[j] = self.data[j], self.data[i]
 
 # Update 2: Hashmaps w/ chaining 
 # Update 3: +remove_value()
@@ -81,26 +83,28 @@ class HashMap:
             value = (value * 31 + ord(char)) % self._size
         return value
 
+# Jo Update 3 or 4 idk: if not key in bucket: doesnt account for tuples so set and remove values are updated to account for that :)
     def set_value(self, key: str, value: int) -> None:
         index: int = self.hash_function(key)
         bucket: list = self._list[index]
         
-        if not key in bucket:
+        key_exists = any(k == key for k, v in bucket)
+
+        if not key_exists:
             bucket.append((key, value))
             return
         
         for i, (k, v) in enumerate(bucket):
-            bucket[i] = (key, value) if k == key else bucket[i]
-
+            if k == key:
+                bucket[i] = (key, value)
+                break
+            
     def remove_value(self, key: str) -> None:
         index: int = self.hash_function(key)
         bucket: list = self._list[index]
-
-        if not key in bucket:
-            return
-
-        for i, (k,v) in enumerate(bucket):
-            if key == k: bucket.pop(i) 
+        
+        #remove the tuple with matching key
+        bucket[:] = [(k, v) for k, v in bucket if k != key]
 
     def get_value(self, key: str) -> int:
         index: int = self.hash_function(key)
@@ -327,19 +331,19 @@ def dijkstra(graph: Graph, start: str, end: str):
                 prev[neighbor] = current_node
                 heap.push((new_cost, neighbor))
         
-        #if the graph is disconnected or unreachable
-        if start != end and end not in prev:
-            return None, float('inf')
+    #if the graph is disconnected or unreachable
+    if start != end and end not in prev:
+        return None, float('inf')
         
-        path = [] #list of cities
-        node = end
-        while node != start:
-            path.append(node)
-            node = prev[node]
-        path.append(start)
-        path.reverse()
+    path = [] #list of cities
+    node = end
+    while node != start:
+        path.append(node)
+        node = prev[node]
+    path.append(start)
+    path.reverse()
 
-        return path, dist[end]
+    return path, dist[end]
 
         
 

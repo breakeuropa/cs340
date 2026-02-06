@@ -13,6 +13,12 @@ At this stage, the module is limited to **graph creation and representation only
 ---
 
 ## Graph Concept
+-Module 1: Graph Builder
+-Purpose
+-This module focuses on constructing a graph data structure that represents relationships between entities such as cities and roads.
+The output of this module will be reused by later modules, so the design emphasizes clean interfaces, correct structure, and error handling.
+At this stage, the module is limited to graph creation and representation only.
+Graph Concept
 A graph is a non-linear data structure composed of:
 - **Nodes (vertices):** represent entities such as cities or locations
 - **Edges:** represent connections between nodes
@@ -134,3 +140,12 @@ The system includes validation and error handling to:
 - **Clear interfaces:** Future modules interact only through defined functions
 - **Stable data types:** Nodes, edges, and weights use consistent data structures
 - **Return values:** Methods return well-defined outputs or updated structures
+Detect malformed input
+Prevent invalid nodes or edges
+Avoid runtime crashes
+Provide meaningful error messages
+Interface and Design Principles
+Encapsulation: Graph internals are hidden behind class methods
+Clear interfaces: Future modules interact only through defined functions
+Stable data types: Nodes, edges, and weights use consistent data structures
+Return values: Methods return well-defined outputs or updated structures

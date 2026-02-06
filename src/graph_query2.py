@@ -267,28 +267,17 @@ def load_query_file(srcfile: str, data: Graph) -> None:
             try: cost: int = int(values[3])
             except: cost = 999
 
-            # Update 1: It seems like some roads from commands2.txt aren't defined in input1.txt
-            # Let A and B be nodes, c1 and c2 be cost numbers.
-            if not data.has_edge(src_node, dst_node): # If B is not in A
-
-                if data.has_edge(dst_node, src_node): # If A in B
-                    
-                    print(f"debug: {dst_node} isn't located in {src_node} BUTTTT.... {dst_node} contains {src_node}")
-                    edge_cost: int = data.get_cost(dst_node, src_node) + cost
-                    data.add_edge(src_node, dst_node, edge_cost)
-
-                else: 
-                    # A is not in B AND B is not in A, so we need to create an edge 
-                    # with the cost. If the cost is < 0 then set it to 0
-                    cost = cost if (cost >= 0) else 0
-                    data.add_edge(src_node, dst_node, cost)
-                    print(f"{dst_node} isn't located in {src_node}, (NEW CONNECTION)")
-
-
+            # Handle traffic reports
+            if not data.has_edge(src_node, dst_node):
+                # If edge doesn't exist, create it with the cost change
+                # If cost is negative, set to 0
+                cost = max(0, cost)
+                data.add_edge(src_node, dst_node, cost)
             else:
+                # Update existing edge
                 edge_cost: int = data.get_cost(src_node, dst_node)
-                print(f"{dst_node} found in {src_node} {edge_cost}")
-                data.set_cost(src_node, dst_node, edge_cost + cost)
+                new_cost = max(0, edge_cost + cost)  # Ensure cost doesn't go negative
+                data.set_cost(src_node, dst_node, new_cost)
 
         elif values[0] == "QUERY" and values[1] == "SHORTEST_PATH":
             start = values[2]
@@ -296,13 +285,25 @@ def load_query_file(srcfile: str, data: Graph) -> None:
             path, cost = dijkstra(data, start, end)
 
             if path is None or cost == float('inf'):
-                print(f"SHORTEST_PATH {start} {end}: No path available...")
+                print(f"SHORTEST_PATH {start} {end}: No path available")
             else:
                 path_str = " -> ".join(path)
                 print(f"SHORTEST_PATH {start} {end}: {path_str} (cost: {int(cost)})")
 
-        else: # query -> k_paths
-            pass
+        elif values[0] == "QUERY" and values[1] == "K_PATHS":
+            start = values[2]
+            end = values[3]
+            k = int(values[4])
+            
+            paths = k_shortest_paths(data, start, end, k)
+            
+            if not paths:
+                print(f"K_PATHS {start} {end}: No paths available")
+            else:
+                print(f"K_PATHS {start} {end}:")
+                for idx, (path, cost) in enumerate(paths, 1):
+                    path_str = " -> ".join(path)
+                    print(f"{idx}) {path_str} ({int(cost)})")
 
 #Jo Update 2: Dijkstra
 def dijkstra(graph: Graph, start: str, end: str):
@@ -349,11 +350,49 @@ def dijkstra(graph: Graph, start: str, end: str):
     path.append(start)
     path.reverse()
 
-    #print(f"Path: {path} cost: {dist[end]}")
-
     return path, dist[end]
 
+#The function below is for the kpath implementation
+def k_shortest_paths(graph: Graph, start: str, end: str, k: int):
+    """Find k shortest paths using iterative Dijkstra approach"""
+    all_paths = []
+    
+    # Create a modified graph for each iteration
+    temp_graph_edges = {}  # Store removed edges
+    
+    for i in range(k):
+        # Find shortest path in current graph state
+        path, cost = dijkstra(graph, start, end)
         
+        if path is None or cost == float('inf'):
+            break  # No more paths available
+        
+        all_paths.append((path, cost))
+        
+        # If we found k paths, stop
+        if len(all_paths) >= k:
+            break
+        
+        # Remove edges from this path to find alternative routes
+        # Store them so we can restore later if needed
+        for j in range(len(path) - 1):
+            src = path[j]
+            dst = path[j + 1]
+            
+            if graph.has_edge(src, dst):
+                # Store the edge for potential restoration
+                edge_key = (src, dst)
+                if edge_key not in temp_graph_edges:
+                    temp_graph_edges[edge_key] = graph.get_cost(src, dst)
+                
+                # Temporarily remove the edge
+                graph.remove_edge(src, dst)
+    
+    # Restore all removed edges
+    for (src, dst), cost in temp_graph_edges.items():
+        graph.add_edge(src, dst, cost)
+    
+    return all_paths
 
 def main(argv: list) -> None:
 
@@ -363,25 +402,6 @@ def main(argv: list) -> None:
    
     city_graph: Graph = load_cities_file(argv[1])
     load_query_file(argv[2], city_graph)
-    # city_graph._adjacency_list()
-
-    hash = HashMap(500)
-    # print(f"{hash.hash_function('hello world')}")
-    # print(f"{hash.hash_function('Hello world')}")
-    # print(f"{hash.hash_function('cat')}")
-    # print(f"{hash.hash_function('cta')}")
-    # print(f"{hash.hash_function('tac')}")
-    # print(f"{hash.hash_function('tca')}")
-    # print(f"{hash.hash_function('act')}")
-    # print(f"{hash.hash_function('atc')}")
-
-    # hash.append("test", 48)
-    # hash.append("sett", 72)
-    # hash.append("etst", 499)
-
-    # print(f"{hash.get_value('test')}")
-    # print(f"{hash.get_value('sett')}")
-    # print(f"{hash.get_value('etst')}")
 
 # Update 5; argument pass
 if __name__ == "__main__":

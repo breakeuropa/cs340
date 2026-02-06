@@ -295,6 +295,12 @@ def load_query_file(srcfile: str, data: Graph) -> None:
             end = values[3]
             path, cost = dijkstra(data, start, end)
 
+            if path is None or cost == float('inf'):
+                print(f"SHORTEST_PATH {start} {end}: No path available...")
+            else:
+                path_str = " -> ".join(path)
+                print(f"SHORTEST_PATH {start} {end}: {path_str} (cost: {int(cost)})")
+
         else: # query -> k_paths
             pass
 
@@ -342,6 +348,8 @@ def dijkstra(graph: Graph, start: str, end: str):
         node = prev[node]
     path.append(start)
     path.reverse()
+
+    #print(f"Path: {path} cost: {dist[end]}")
 
     return path, dist[end]
 

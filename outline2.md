@@ -91,9 +91,7 @@ To keep code clean and reusable:
 ## 5) CLI Input and Output
 
 ### Commands File Format (`commands2.txt`)
-Examples:
 
----
 
 ## Summary
 Module 2 prepares the graph for weighted routing by adding:

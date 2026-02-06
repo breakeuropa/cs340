@@ -1,6 +1,6 @@
-Module 1: Graph Builder
-Purpose
-This module focuses on constructing a graph data structure that represents relationships between entities such as cities and roads.
+-Module 1: Graph Builder
+-Purpose
+-This module focuses on constructing a graph data structure that represents relationships between entities such as cities and roads.
 The output of this module will be reused by later modules, so the design emphasizes clean interfaces, correct structure, and error handling.
 At this stage, the module is limited to graph creation and representation only.
 Graph Concept

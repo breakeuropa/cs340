@@ -1,264 +1,384 @@
+# graph_query2.py  (Module 2 - Team Style, FIXED)
+# Implements:
+#   - HashMap (chaining) for TRAFFIC deltas
+#   - Dijkstra (SHORTEST_PATH only)
+#   - Parses:
+#       TRAFFIC_REPORT CityA CityB +3
+#       QUERY SHORTEST_PATH CityA CityB
+# Usage:
+#   python3 graph_query2.py input1.txt commands2.txt
+
 import sys
 
-# Update 2: Hashmaps w/ chaining 
-# Update 3: +remove_value()
 
-# (2/4/26 - 6:53am): If prof asked us to turn this into an undirected graph, we might need to change
-# the graph class a bit. Possible solution: For example, instead of having each city containing its
-# own dictionary, we will remove this and the main list will probably be a tuple or something
+# ----------------------------
+# Min-Heap (for Dijkstra)
+# ----------------------------
+class MinHeap:
+    def __init__(self):
+        self.data = []
 
+    def is_empty(self):
+        return len(self.data) == 0
+
+    def push(self, item):
+        # item must be (cost, node)
+        self.data.append(item)
+        self._bubble_up(len(self.data) - 1)
+
+    def pop(self):
+        if self.is_empty():
+            return None
+
+        self._swap(0, len(self.data) - 1)
+        item = self.data.pop()
+        self._bubble_down(0)
+        return item
+
+    def _bubble_up(self, index):
+        parent = (index - 1) // 2
+        if index > 0 and self.data[index][0] < self.data[parent][0]:
+            self._swap(index, parent)
+            self._bubble_up(parent)
+
+    def _bubble_down(self, index):
+        left = 2 * index + 1
+        right = 2 * index + 2
+        smallest = index
+
+        if left < len(self.data) and self.data[left][0] < self.data[smallest][0]:
+            smallest = left
+        if right < len(self.data) and self.data[right][0] < self.data[smallest][0]:
+            smallest = right
+
+        if smallest != index:
+            self._swap(index, smallest)
+            self._bubble_down(smallest)
+
+    def _swap(self, i, j):
+        self.data[i], self.data[j] = self.data[j], self.data[i]
+
+
+# ----------------------------
+# HashMap w/ chaining (FIXED)
+# traffic_delta key format: "CityA|CityB"
+# value: cumulative delta (+/-)
+# ----------------------------
 class HashMap:
-
-    # We want to initalize the size so % operator won't be a problem.
-    def __init__(self, size):
-        self._size: int = size
-        self._list: list = [[] for _ in range(size)]
+    def __init__(self, size: int):
+        self._size = size
+        self._list = [[] for _ in range(size)]
 
     def hash_function(self, key: str) -> int:
-        value: int = 0
+        value = 0
         for char in key:
             value = (value * 31 + ord(char)) % self._size
         return value
 
     def set_value(self, key: str, value: int) -> None:
-        index: int = self.hash_function(key)
-        bucket: list = self._list[index]
-        
-        if not key in bucket:
-            bucket.append((key, value))
-            return
-        
+        index = self.hash_function(key)
+        bucket = self._list[index]
+
+        # Update existing
         for i, (k, v) in enumerate(bucket):
-            bucket[i] = (key, value) if k == key else bucket[i]
+            if k == key:
+                bucket[i] = (key, value)
+                return
+
+        # Insert new
+        bucket.append((key, value))
 
     def remove_value(self, key: str) -> None:
-        index: int = self.hash_function(key)
-        bucket: list = self._list[index]
-
-        if not key in bucket:
-            return
-
-        for i, (k,v) in enumerate(bucket):
-            if key == k: bucket.pop(i) 
+        index = self.hash_function(key)
+        bucket = self._list[index]
+        bucket[:] = [(k, v) for (k, v) in bucket if k != key]
 
     def get_value(self, key: str) -> int:
-        index: int = self.hash_function(key)
-        bucket: list = self._list[index]
-
-        for i, (k, v) in enumerate(bucket):
-            if key == k:
+        index = self.hash_function(key)
+        bucket = self._list[index]
+        for (k, v) in bucket:
+            if k == key:
                 return v
-        return -1
+        # For traffic deltas, default should be 0 (no traffic change)
+        return 0
 
 
+def edge_key(u: str, v: str) -> str:
+    return f"{u}|{v}"
+
+
+# ----------------------------
+# Graph (team dict-of-dicts style)
+# _nodes[src][dst] = base_cost
+# ----------------------------
 class Graph:
-
-    #create "_nodes" attribute which is a dictionary
-    _nodes: dict
-
-    #initialize empty dictionary
     def __init__(self):
-        self._nodes: dict = {}
+        self._nodes = {}
 
-    #Add city to the graph  
     def add_node(self, node: str) -> None:
-        #Check if city is already in graph
-        if not node in self._nodes.keys():
-            #add with empty list
+        if node not in self._nodes:
             self._nodes.setdefault(node, {})
 
-    #Add road between two cities
     def add_edge(self, node_src: str, node_dst: str, cost: int) -> None:
-        #Check if both cities are in the graph
         if node_src == node_dst:
             return
-        #Check if source (first) city is in list
-        if not node_src in self._nodes.keys():
+        if node_src not in self._nodes:
             self.add_node(node_src)
-        #Check if destination (second) city is in list
-        if not node_dst in self._nodes.keys():
+        if node_dst not in self._nodes:
             self.add_node(node_dst)
-
-        #Calculate cost based on source and destination
         self._nodes[node_src][node_dst] = cost
 
-    #Remove city from graph
     def remove_node(self, node: str) -> None:
-        #Check if city exists
-        if not node in self._nodes.keys():
+        if node not in self._nodes:
             return
-        #Cycle through each instance of the city and "delete" it from the list
-        for key in self._nodes.keys():
+        for key in list(self._nodes.keys()):
             if node in self._nodes[key]:
                 self._nodes[key].pop(node)
-        #remove the city
         self._nodes.pop(node)
 
-    #Remove road from graph
-    def remove_edge(self, src_node: str, node: str):
-        #Check if road exists
-        if not src_node in self._nodes.keys():
+    def remove_edge(self, src_node: str, dst_node: str) -> None:
+        if src_node not in self._nodes:
             return
-        #Check if road connects to city
-        if not node in self._nodes[src_node].keys():
+        if dst_node not in self._nodes[src_node]:
             return
-        #Remove road
-        self._nodes[src_node].pop(node)
+        self._nodes[src_node].pop(dst_node)
 
-    #Convert to Adjacendy List
-    def _adjacency_list(self):
-        #Print the Graph
-        for nodeKeys in self._nodes.keys():
-            txt: str = f"{nodeKeys}: "
-            nodedict: dict = self._nodes[nodeKeys]
-            count: int = 0
-            size: int = len(nodedict)
-            #Format output
-            for pair in nodedict.items():
-                count+=1
-                txt+= f"{pair[0]}({pair[1]})"
-                txt = (txt + ", ") if (count < size) else (txt + " ")
-            print(f"{txt}")
-           
-    #Return adjacent nodes      
     def get_adjacent_nodes(self, node: str) -> dict:
-        if not node in self._nodes:
-            return {}
-        return self._nodes[node]
-   
-   #Return cost
+        return self._nodes.get(node, {})
+
     def get_cost(self, src_node: str, dst_node: str) -> int:
-        if not src_node in self._nodes:
+        if src_node not in self._nodes:
             return -1
-        if not dst_node in self._nodes[src_node]:
+        if dst_node not in self._nodes[src_node]:
             return -1
         return self._nodes[src_node][dst_node]
-   
-   #Change cost between cities
+
     def set_cost(self, src_node: str, dst_node: str, cost: int) -> None:
-        #Check if cities and roads exist
-        if not src_node in self._nodes.keys():
+        if src_node not in self._nodes:
             raise ValueError(f"{src_node} is not created.")
-        if not dst_node in self._nodes:
+        if dst_node not in self._nodes:
             raise ValueError(f"{dst_node} is not created.")
-        if not dst_node in self._nodes[src_node]:
+        if dst_node not in self._nodes[src_node]:
             raise ValueError(f"{dst_node} is not adjacent to {src_node}.")
-        #Calculate cost
         self._nodes[src_node][dst_node] = cost
 
     def has_edge(self, src_node: str, dst_node: str) -> bool:
-        return dst_node in self._nodes[src_node]
-    
+        return src_node in self._nodes and dst_node in self._nodes[src_node]
+
     def contains(self, node: str) -> bool:
         return node in self._nodes
 
+    def to_adjacency_list(self) -> str:
+        lines = []
+        for src in self._nodes.keys():
+            nodedict = self._nodes[src]
+            parts = [f"{dst}({cost})" for dst, cost in nodedict.items()]
+            lines.append(f"{src}: " + ", ".join(parts) if parts else f"{src}:")
+        return "\n".join(lines)
+
+
+# ----------------------------
+# Module 1 file parser
+# ----------------------------
 def load_cities_file(srcfile: str) -> Graph:
     new_graph = Graph()
 
     try:
-        file = open(srcfile, "r")
-    except:
+        with open(srcfile, "r") as file:
+            keys = {"ROADS", "CITIES"}
+            selected_key = None
+
+            for line in file:
+                txt = line.strip()
+                if not txt:
+                    continue
+
+                if txt in keys:
+                    selected_key = txt
+                    continue
+
+                if selected_key == "CITIES":
+                    new_graph.add_node(txt)
+
+                elif selected_key == "ROADS":
+                    values = txt.split()  # safe for multiple spaces
+                    if len(values) != 3:
+                        # skip malformed line
+                        continue
+                    src_node, dst_node, w_str = values
+                    try:
+                        cost = int(w_str)
+                    except ValueError:
+                        # skip bad weight
+                        continue
+                    new_graph.add_edge(src_node, dst_node, cost)
+
+    except FileNotFoundError:
         raise FileNotFoundError(f"File {srcfile} isn't found.")
-   
-    keys = {"ROADS", "CITIES"}
-    selected_key: str = "None"
-   
-    for line in file:
-        txt: str = line.rstrip()
-       
-        if txt in keys:
-            selected_key = txt
-           
-        if selected_key == "CITIES" and txt != selected_key:
-            new_graph.add_node(txt)
-       
-        elif selected_key == "ROADS" and txt != selected_key:
-           
-            values: list = txt.split(' ')
-            src_node: str = values[0]
-            dst_node: str = values[1]
-           
-            try: cost: int = int(values[2])
-            except: cost = 999 # Default cost if it is not properly defined.
-           
-            new_graph.add_edge(src_node, dst_node, cost)
-           
+
     return new_graph
 
-def load_query_file(srcfile: str, data: Graph) -> None:
 
-    try:
-        file = open(srcfile, "r")
-    except:
-        raise FileNotFoundError(f"File {srcfile} isn't found.")
+# ----------------------------
+# Dijkstra using base graph + traffic deltas (HashMap)
+# effective_weight = base + delta
+# ----------------------------
+def dijkstra(graph: Graph, traffic: HashMap, start: str, end: str):
+    if not graph.contains(start) or not graph.contains(end):
+        return None, float("inf")
+
+    dist = {node: float("inf") for node in graph._nodes}
+    dist[start] = 0
+    prev = {}
+
+    heap = MinHeap()
+    heap.push((0, start))
+
+    while not heap.is_empty():
+        popped = heap.pop()
+        if popped is None:
+            break
+
+        current_cost, u = popped
+
+        if current_cost != dist[u]:
+            continue
+
+        if u == end:
+            break
+
+        for v, base_w in graph.get_adjacent_nodes(u).items():
+            delta = traffic.get_value(edge_key(u, v))
+            w = base_w + delta
+
+            if w < 0:
+                w = 0
+
+            new_cost = current_cost + w
+            if new_cost < dist[v]:
+                dist[v] = new_cost
+                prev[v] = u
+                heap.push((new_cost, v))
+
+    if start != end and end not in prev:
+        return None, float("inf")
+
+    # rebuild path
+    path = [end]
+    while path[-1] != start:
+        path.append(prev[path[-1]])
+    path.reverse()
+
+    return path, dist[end]
+
+def k_shortest_paths(graph: Graph, traffic: HashMap, start: str, end: str, k: int):
+    """Find k shortest paths using iterative Dijkstra approach"""
+    all_paths = []
     
-    for line in file:
-        values: list = line.rstrip().split(' ')
-
-        if values[0] == "TRAFFIC_REPORT":
+    temp_graph_edges = {}  
+    
+    for i in range(k):
+        # Find shortest path in current graph state
+        path, cost = dijkstra(graph, traffic, start, end)
+        
+        if path is None or cost == float('inf'):
+            break  # No more paths available
+        
+        all_paths.append((path, cost))
+        
+        if len(all_paths) >= k:
+            break
+        
+        for j in range(len(path) - 1):
+            src = path[j]
+            dst = path[j + 1]
             
-            src_node: str = values[1]
-            dst_node: str = values[2]
-            try: cost: int = int(values[3])
-            except: cost = 999
+            if graph.has_edge(src, dst):
+                edge_key = (src, dst)
+                if edge_key not in temp_graph_edges:
+                    temp_graph_edges[edge_key] = graph.get_cost(src, dst)
+                
+                graph.remove_edge(src, dst)
+    
+    for (src, dst), cost in temp_graph_edges.items():
+        graph.add_edge(src, dst, cost)
+    
+    return all_paths
 
-            # Update 1: It seems like some roads from commands2.txt aren't defined in input1.txt
-            # Let A and B be nodes, c1 and c2 be cost numbers.
-            if not data.has_edge(src_node, dst_node): # If B is not in A
+# ----------------------------
+# commands2.txt parser
+# ----------------------------
+def load_query_file(srcfile: str, data: Graph) -> None:
+    try:
+        with open(srcfile, "r") as file:
+            # Traffic map: edge -> delta
+            traffic = HashMap(2003)  # prime-ish size helps reduce collisions
 
-                if data.has_edge(dst_node, src_node): # If A in B
+            for line in file:
+                values = line.strip().split()  # safe split
+                if not values:
+                    continue
+
+                # TRAFFIC_REPORT City1 City2 +3
+                if values[0] == "TRAFFIC_REPORT":
+                    if len(values) != 4:
+                        continue
+                    src_node = values[1]
+                    dst_node = values[2]
+
+                    try:
+                        delta = int(values[3])  # +3 or -2
+                    except ValueError:
+                        continue
+
+                    k = edge_key(src_node, dst_node)
+                    current = traffic.get_value(k)
+                    traffic.set_value(k, current + delta)
+
+                # QUERY SHORTEST_PATH City1 City4
+                elif values[0] == "QUERY" and len(values) >= 2 and values[1] == "SHORTEST_PATH":
+                    if len(values) != 4:
+                        continue
+                    start = values[2]
+                    end = values[3]
+
+                    path, cost = dijkstra(data, traffic, start, end)
+
+                    if path is None or cost == float("inf"):
+                        print(f"SHORTEST_PATH {start} {end}: NO PATH")
+                    else:
+                        path_str = " -> ".join(path)
+                        print(f"SHORTEST_PATH {start} {end}: {path_str} (cost: {int(cost)})")
+                
+                elif values[0] == "QUERY" and values[1] == "K_PATHS":
+                    start = values[2]
+                    end = values[3]
                     
-                    print(f"debug: {dst_node} isn't located in {src_node} BUTTTT.... {dst_node} contains {src_node}")
-                    edge_cost: int = data.get_cost(dst_node, src_node) + cost
-                    data.add_edge(src_node, dst_node, edge_cost)
+                    try: k = int(values[4])
+                    except ValueError: continue
+                    
+                    paths = k_shortest_paths(data, traffic, start, end, k)
+                    
+                    if not paths:
+                        print(f"K_PATHS {start} {end}: No paths available")
+                    else:
+                        print(f"K_PATHS {start} {end}:")
+                        for idx, (path, cost) in enumerate(paths, 1):
+                            path_str = " -> ".join(path)
+                            print(f"{idx}) {path_str} ({int(cost)})")
 
-                else: 
-                    # A is not in B AND B is not in A, so we need to create an edge 
-                    # with the cost. If the cost is < 0 then set it to 0
-                    cost = cost if (cost >= 0) else 0
-                    data.add_edge(src_node, dst_node, cost)
-                    print(f"{dst_node} isn't located in {src_node}, (NEW CONNECTION)")
+    except FileNotFoundError:
+        raise FileNotFoundError(f"File {srcfile} isn't found.")
 
-
-            else:
-                edge_cost: int = data.get_cost(src_node, dst_node)
-                print(f"{dst_node} found in {src_node} {edge_cost}")
-                data.set_cost(src_node, dst_node, edge_cost + cost)
-
-        elif values[0] == "QUERY" and values[1] == "SHORTEST_PATH":
-            pass
-
-        else: # query -> k_paths
-            pass
 
 def main(argv: list) -> None:
-
     if len(argv) != 3:
-        print(f"Invalid. Command usage: python {argv[0]} <city file> <query file>")
+        print(f"Invalid. Command usage: python3 {argv[0]} <city file> <query file>")
         return
-   
-    city_graph: Graph = load_cities_file(argv[1])
+
+    city_graph = load_cities_file(argv[1])
     load_query_file(argv[2], city_graph)
-    # city_graph._adjacency_list()
 
-    hash = HashMap(500)
-    # print(f"{hash.hash_function('hello world')}")
-    # print(f"{hash.hash_function('Hello world')}")
-    # print(f"{hash.hash_function('cat')}")
-    # print(f"{hash.hash_function('cta')}")
-    # print(f"{hash.hash_function('tac')}")
-    # print(f"{hash.hash_function('tca')}")
-    # print(f"{hash.hash_function('act')}")
-    # print(f"{hash.hash_function('atc')}")
 
-    # hash.append("test", 48)
-    # hash.append("sett", 72)
-    # hash.append("etst", 499)
-
-    # print(f"{hash.get_value('test')}")
-    # print(f"{hash.get_value('sett')}")
-    # print(f"{hash.get_value('etst')}")
-
-# Update 5; argument pass
 if __name__ == "__main__":
     main(sys.argv)

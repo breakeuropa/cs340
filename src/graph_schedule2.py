@@ -6,6 +6,28 @@
 
 import sys
 
+#Update 2: BST for history thumbs up
+class TreeNode:
+    def __init__(self, city, time):
+        self.left = None
+        self.right = None
+        self.city = city
+        self.time = time
+
+    def insert(root, time):
+        if root is None:
+            return TreeNode(time)
+        if root.time == time:
+            return root
+        if root.time < time:
+            root.right = insert(root.right, time)
+        else:
+            root.left = insert(root.left, time)
+        return root
+
+        
+
+
 # ----------------------------
 # Queue 
 # ----------------------------
@@ -389,24 +411,38 @@ def load_query_file(srcfile: str, data: Graph) -> None:
     except FileNotFoundError:
         raise FileNotFoundError(f"File {srcfile} isn't found.")
 
+#Jo Update 1.2 Queue File Loader
 def load_schedule_file(srcfile: str) -> None:
     try:
         with open(srcfile, "r") as file:
             delivery = Queue()
+            print("Made Queue")
 
             for line in file:
                 values = line.strip().split()  # safe split
+                #print(f"values: {values}")
                 if not values:
+                    print("Line emoty")
                     continue
-
+                
                 # SCHEDULE DELIVERY City25->City0 at 09:00
-                if values[0] == "SCHEDULE DELIVERY":
-                    if len(values) != 4:
+                if values[0] == "SCHEDULE" and values[1] == "DELIVERY":
+                    
+                    if len(values) != 5:
                         continue
-                    city = values[1]
-                    time = values[3]
+ 
+                    city: str = values[2]
+                    time: str = values[4]
+
+                    #print(f"city: {city} time: {time}")
 
                     print(f"{delivery.enqueue(city, time)}")
+                
+                if values[0] == "RECORD_HISTORY":
+                    print("Dequeuing!")
+                    print(f"{delivery.dequeue()}")
+                    print("Current Queue: ")
+                    delivery.print_queue()
     
     except FileNotFoundError:
         raise FileNotFoundError(f"File {srcfile} isn't found.")

@@ -66,6 +66,7 @@ Each team member contributed to the development and debugging of the system. Res
 Focused on outlining the system architecture and supporting module integration. Implemented helper functions and contributed to debugging across multiple modules.
 
 **Alex Agbleade**
+Completed file parsing and implemented multiple helper functions,  and graph construction functions, and developed the command-line interface with error handling. Contributed to output formatting and cross-module integration.
 
 **Jo Schmidt**
 Led the initial development setup and created foundational data structures and functions. Developed key classes including the MinHeap and Queue, contributed to the Dijkstra shortest path implementation, and implemented HashMap utility functions. Also maintained project coordination through task lists.

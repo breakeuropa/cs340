@@ -1,0 +1,41 @@
+Group 2
+Members & Roles:
+Sajeda Abuisad: add shortcut functions, debug code, outline each module
+Alex Agbleade: debug, write, and clean code
+Jo Schmidt: initate & create team code, to-do and completed lists, class designer
+Kaden Walls: GitHub organizer, class designer, debugger
+
+Project: Transport Network System
+The Ministry of Transport contacted and supplied Group 2 at TransRoute Systems with cities and road networks, real-time traffic updates, and delivery request stream. The group was asked to create a model of the map, reroute based on live traffic condtions, and track deliveries. 
+System requirements paresed by the team are:
+  Adding new roads and cities to a map
+  Update and retrieve the distance (or cost) of roads
+  Handle dynamic traffic reports
+  Find the shortest path between cities
+  Schedule and record deliveries
+  Undo schedule and record
+
+Contribution Breakdown
+Abuisad:
+Agbleade
+Schmidt:
+  I was the team member who initiated the conversation to start assignments. This included creating To-Do Lists which were updated throughout the week, creating and sharing the .py file, and writing this README. Most of my work focused on crafting general classes and functions to be adjusted and refined later in the week. Examples of classes I created are the MinHeap adn Queue while some functions are dijkstra, set & remove value in the HashMap class, and initial tests for the load files functions. Research for data structures and their implementation in python was also provided by myself. 
+Walls: Created the Graph data structure, revised other classes such as the MinHeap & Queue. Designed the parsing system framework for road builder & query.
+
+Design Summary
+There are 6 main sections to the system. 
+1) Input files: these include traffic reports, queries, commands, cities & roads, record history, undo, and schedule delivery
+2) Parse input: check what the command line arguments are asking for 
+3) Graph Builder (Module 1): create a directed and weighted graph for cities and roads based on input files
+4) Traffic and Priority Query (Module 2): create a hashmap for dynamic road costs, handle shortest and K path queries
+5) Delivery Scheduler (Module 3): create a Queue for delivery tasks, a Sorted List for history/recorded actions, and a Stack to undo actions
+6) Format Output: command line interface output, add arrows "->", paranthesis "()", and spacing " " for clear and clean output
+Each module, although done seperately, had to accomplish secitions 1, 2, and 6. As mentioned, a various data structures were used for each module. Module 1, the Graph builder, used a Graph described above. Module 2 used a Minimun Heap, a BST with the root node containing the least value, in conjunction with Dijkstra's algorithm for finding the shortest path between cities and K paths, or the number of different paths between a source and destination. The Graph from module 1 was reused and a HashMap was created to dynamically update road costs. A HashMap effciently and quickly sorts and retrieves data compared to standard search. For Module 3, a Queue was used for delivery scheduling. The Queue nodes had both the route name and time of delivery. The History log was a sorted list by time, organized earliest to latest times. Finally the Undo Stack, first-in last-out as opposed to a Queue's first-in first-out principle, took the most recently added action, whether a delivery or record, and undid it by removing an item from Queue or moving History items back to the delivery Queue respectively. 
+
+Lessons Learned:
+Jo: Working in a team requires clear communication (in comments & in overall communication) and To-Do Lists are helpful!!
+Sajeda: Making an outline before starting on the project, is the best way to approach any project.
+Sajeda: unit testing is important before moving to the next module, and gradually adding module was an effective way that helps with debugging and maintenance.
+Sajeda: Always tell your group about any modifications you make. Transparency is the key.
+Alex: It is very  essential to work with a very cooperative team because it makes the work relatively easier and fun to do
+Kaden: Be responsive, proactive, and ensure that any changes are properly disclosed to the group. Changes made or code snippets should be concise and understandable.

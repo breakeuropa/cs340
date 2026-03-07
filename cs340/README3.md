@@ -72,7 +72,7 @@ Completed file parsing and implemented multiple helper functions,  and graph con
 Led the initial development setup and created foundational data structures and functions. Developed key classes including the MinHeap and Queue, contributed to the Dijkstra shortest path implementation, and implemented HashMap utility functions. Also maintained project coordination through task lists.
 
 **Kaden Walls**
-
+Created the Graph data structure, revised other classes such as the MinHeap & Queue. Designed the parsing system framework for road builder & query.
 
 ---
 
